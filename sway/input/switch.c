@@ -11,6 +11,7 @@ struct sway_switch *sway_switch_create(struct sway_seat *seat,
 		return NULL;
 	}
 	device->switch_device = switch_device;
+	switch_device->wlr = wlr_switch_from_input_device(device->input_device->wlr_device);
 	switch_device->seat_device = device;
 	switch_device->state = WLR_SWITCH_STATE_OFF;
 	wl_list_init(&switch_device->switch_toggle.link);
@@ -34,7 +35,8 @@ static bool sway_switch_trigger_test(enum sway_switch_trigger trigger,
 
 static void execute_binding(struct sway_switch *sway_switch) {
 	struct sway_seat* seat = sway_switch->seat_device->sway_seat;
-	bool input_inhibited = seat->exclusive_client != NULL;
+	bool input_inhibited = seat->exclusive_client != NULL ||
+		server.session_lock.locked;
 
 	list_t *bindings = config->current_mode->switch_bindings;
 	struct sway_switch_binding *matched_binding = NULL;
@@ -94,10 +96,8 @@ static void handle_switch_toggle(struct wl_listener *listener, void *data) {
 }
 
 void sway_switch_configure(struct sway_switch *sway_switch) {
-	struct wlr_input_device *wlr_device =
-		sway_switch->seat_device->input_device->wlr_device;
 	wl_list_remove(&sway_switch->switch_toggle.link);
-	wl_signal_add(&wlr_device->switch_device->events.toggle,
+	wl_signal_add(&sway_switch->wlr->events.toggle,
 			&sway_switch->switch_toggle);
 	sway_switch->switch_toggle.notify = handle_switch_toggle;
 	sway_log(SWAY_DEBUG, "Configured switch for device");

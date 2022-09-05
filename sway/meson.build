@@ -5,7 +5,9 @@ sway_sources = files(
 	'decoration.c',
 	'ipc-json.c',
 	'ipc-server.c',
+	'lock.c',
 	'main.c',
+	'realtime.c',
 	'server.c',
 	'swaynag.c',
 	'xdg_activation_v1.c',
@@ -65,6 +67,7 @@ sway_sources = files(
 	'commands/force_focus_wrapping.c',
 	'commands/fullscreen.c',
 	'commands/gaps.c',
+	'commands/gesture.c',
 	'commands/hide_edge_borders.c',
 	'commands/inhibit_idle.c',
 	'commands/kill.c',
@@ -188,6 +191,7 @@ sway_sources = files(
 	'commands/output/max_render_time.c',
 	'commands/output/mode.c',
 	'commands/output/position.c',
+	'commands/output/power.c',
 	'commands/output/render_bit_depth.c',
 	'commands/output/scale.c',
 	'commands/output/scale_filter.c',
@@ -217,9 +221,11 @@ sway_deps = [
 	glesv2,
 	pixman,
 	server_protos,
+	threads,
 	wayland_server,
 	wlroots,
 	xkbcommon,
+	xcb_icccm,
 ]
 
 if have_xwayland

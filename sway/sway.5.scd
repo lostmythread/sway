@@ -176,6 +176,12 @@ set|plus|minus|toggle <amount>
 *layout* default|splith|splitv|stacking|tabbed
 	Sets the layout mode of the focused container.
 
+	When using the _stacking_ layout, only the focused window in the container is
+	displayed, with the opened windows' list on the top of the container.
+
+	The _tabbed_ layout is similar to _stacking_, but the windows’ list is vertically
+	split.
+
 *layout* toggle [split|all]
 	Cycles the layout mode of the focused container though a preset list of
 	layouts. If no argument is given, then it cycles through stacking, tabbed
@@ -210,15 +216,14 @@ set|plus|minus|toggle <amount>
 	further details.
 
 *move* left|right|up|down [<px> px]
-	Moves the focused container in the direction specified. If the container,
-	the optional _px_ argument specifies how many pixels to move the container.
-	If unspecified, the default is 10 pixels. Pixels are ignored when moving
-	tiled containers.
+	Moves the focused container in the direction specified. The optional _px_
+	argument specifies how many pixels to move the container. If unspecified,
+	the default is 10 pixels. Pixels are ignored when moving tiled containers.
 
 *move* [absolute] position <pos_x> [px|ppt] <pos_y> [px|ppt]
 	Moves the focused container to the specified position in the workspace.
 	The position can be specified in pixels or percentage points, omitting
-	the unit defaults to pixels. If	_absolute_ is used, the position is
+	the unit defaults to pixels. If _absolute_ is used, the position is
 	relative to all outputs. _absolute_ can not be used with percentage points.
 
 *move* [absolute] position center
@@ -482,6 +487,62 @@ runtime.
 		bindswitch lid:toggle exec echo "Lid moved"
 ```
 
+*bindgesture* [--exact] [--input-device=<device>] [--no-warn] \
+<gesture>[:<fingers>][:directions] <command>
+	Binds _gesture_ to execute the sway command _command_ when detected.
+	Currently supports the _hold_, _pinch_ or _swipe_ gesture. Optionally
+	can be limited to bind to a certain number of _fingers_ or, for a
+	_pinch_ or _swipe_ gesture, to certain _directions_.
+
+[[ *type*
+:[ *fingers*
+:< *direction*
+|  hold
+:- 1 - 5
+:  none
+|  swipe
+:  3 - 5
+:  up, down, left, right
+|  pinch
+:  2 - 5
+:  all above + inward, outward, clockwise, counterclockwise
+
+	The _fingers_ can be limited to any sensible number or left empty to accept
+	any finger counts.
+	Valid directions are _up_, _down_, _left_ and _right_, as well as _inward_,
+	_outward_, _clockwise_, _counterclockwise_ for the _pinch_ gesture.
+	Multiple directions can be combined by a plus.
+
+	If a _input-device_ is given, the binding will only be executed for
+	that input device and will be executed instead of any binding that is
+	generic to all devices. By default, if you overwrite a binding,
+	swaynag will give you a warning. To silence this, use the _--no-warn_ flag.
+
+	The _--exact_ flag can be used to ensure a binding only matches when exactly
+	all specified directions are matched and nothing more. If there is matching
+	binding with _--exact_, it will be preferred.
+
+	The priority for matching bindings is as follows: input device, then
+	exact matches followed by matches with the highest number of matching
+	directions.
+
+	Gestures executed while the pointer is above a bar are not handled by sway.
+	See the respective documentation, e.g. *bindgesture* in *sway-bar*(5).
+
+	Example:
+```
+		# Allow switching between workspaces with left and right swipes
+		bindgesture swipe:right workspace prev
+		bindgesture swipe:left workspace next
+
+		# Allow container movements by pinching them
+		bindgesture pinch:inward+up move up
+		bindgesture pinch:inward+down move down
+		bindgesture pinch:inward+left move left
+		bindgesture pinch:inward+right move right
+
+```
+
 *client.background* <color>
 	This command is ignored and is only present for i3 compatibility.
 
@@ -623,7 +684,7 @@ The default colors are:
 	This option determines what to do when a client requests window activation.
 	If set to _urgent_, the urgent state will be set for that window. If set to
 	_focus_, the window will become focused. If set to _smart_, the window will
-	become focused only if it is already visible, otherwise the urgent state 
+	become focused only if it is already visible, otherwise the urgent state
 	will be set. Default is _urgent_.
 
 *focus_wrapping* yes|no|force|workspace
@@ -785,6 +846,11 @@ The default colors are:
 
 *unbindswitch* <switch>:<state>
 	Removes a binding for when <switch> changes to <state>.
+
+*unbindgesture* [--exact] [--input-device=<device>] \
+<gesture>[:<fingers>][:directions]
+	Removes a binding for the specified _gesture_, _fingers_
+	and _directions_ combination.
 
 *unbindsym* [--whole-window] [--border] [--exclude-titlebar] [--release] [--locked] \
 [--to-code] [--input-device=<device>] <key combo>
