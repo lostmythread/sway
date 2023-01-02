@@ -236,7 +236,7 @@ static void handle_new_input(struct wl_listener *listener, void *data) {
 
 	apply_input_type_config(input_device);
 
-	sway_input_configure_libinput_device(input_device);
+	bool config_changed = sway_input_configure_libinput_device(input_device);
 
 	wl_signal_add(&device->events.destroy, &input_device->device_destroy);
 	input_device->device_destroy.notify = handle_device_destroy;
@@ -274,6 +274,10 @@ static void handle_new_input(struct wl_listener *listener, void *data) {
 	}
 
 	ipc_event_input("added", input_device);
+
+	if (config_changed) {
+		ipc_event_input("libinput_config", input_device);
+	}
 }
 
 static void handle_inhibit_activate(struct wl_listener *listener, void *data) {
@@ -528,10 +532,13 @@ static void retranslate_keysyms(struct input_config *input_config) {
 
 static void input_manager_configure_input(
 		struct sway_input_device *input_device) {
-	sway_input_configure_libinput_device(input_device);
+	bool config_changed = sway_input_configure_libinput_device(input_device);
 	struct sway_seat *seat = NULL;
 	wl_list_for_each(seat, &server.input->seats, link) {
 		seat_configure_device(seat, input_device);
+	}
+	if (config_changed) {
+		ipc_event_input("libinput_config", input_device);
 	}
 }
 
@@ -568,6 +575,13 @@ void input_manager_reset_input(struct sway_input_device *input_device) {
 }
 
 void input_manager_reset_all_inputs(void) {
+	// Set the active keyboard to NULL to avoid spamming configuration updates
+	// for all keyboard devices.
+	struct sway_seat *seat;
+	wl_list_for_each(seat, &server.input->seats, link) {
+		wlr_seat_set_keyboard(seat->wlr_seat, NULL);
+	}
+
 	struct sway_input_device *input_device = NULL;
 	wl_list_for_each(input_device, &server.input->devices, link) {
 		input_manager_reset_input(input_device);
@@ -576,7 +590,6 @@ void input_manager_reset_all_inputs(void) {
 	// If there is at least one keyboard using the default keymap, repeat delay,
 	// and repeat rate, then it is possible that there is a keyboard group that
 	// need their keyboard disarmed.
-	struct sway_seat *seat;
 	wl_list_for_each(seat, &server.input->seats, link) {
 		struct sway_keyboard_group *group;
 		wl_list_for_each(group, &seat->keyboard_groups, link) {

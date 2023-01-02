@@ -52,6 +52,7 @@ struct sway_server {
 	struct wl_listener output_layout_change;
 
 	struct wlr_idle *idle;
+	struct wlr_idle_notifier_v1 *idle_notifier_v1;
 	struct sway_idle_inhibit_manager_v1 *idle_inhibit_manager_v1;
 
 	struct wlr_layer_shell_v1 *layer_shell;
@@ -95,6 +96,7 @@ struct sway_server {
 		struct wlr_session_lock_manager_v1 *manager;
 
 		struct wlr_session_lock_v1 *lock;
+		struct wlr_surface *focused;
 		struct wl_listener lock_new_surface;
 		struct wl_listener lock_unlock;
 		struct wl_listener lock_destroy;
@@ -111,6 +113,8 @@ struct sway_server {
 
 	struct wlr_xdg_activation_v1 *xdg_activation_v1;
 	struct wl_listener xdg_activation_v1_request_activate;
+
+	struct wl_list pending_launcher_ctxs; // launcher_ctx::link
 
 	// The timeout for transactions, after which a transaction is applied
 	// regardless of readiness.

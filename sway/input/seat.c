@@ -7,6 +7,7 @@
 #include <wlr/types/wlr_cursor.h>
 #include <wlr/types/wlr_data_device.h>
 #include <wlr/types/wlr_idle.h>
+#include <wlr/types/wlr_idle_notify_v1.h>
 #include <wlr/types/wlr_keyboard_group.h>
 #include <wlr/types/wlr_output_layout.h>
 #include <wlr/types/wlr_primary_selection.h>
@@ -112,6 +113,7 @@ void seat_idle_notify_activity(struct sway_seat *seat,
 	}
 	if ((source & mask) > 0) {
 		wlr_idle_notify_activity(server.idle, seat->wlr_seat);
+		wlr_idle_notifier_v1_notify_activity(server.idle_notifier_v1, seat->wlr_seat);
 	}
 }
 
@@ -209,15 +211,6 @@ static void seat_send_focus(struct sway_node *node, struct sway_seat *seat) {
 			wlr_pointer_constraints_v1_constraint_for_surface(
 				server.pointer_constraints, view->surface, seat->wlr_seat);
 		sway_cursor_constrain(seat->cursor, constraint);
-	}
-}
-
-void sway_force_focus(struct wlr_surface *surface) {
-	struct sway_seat *seat;
-	wl_list_for_each(seat, &server.input->seats, link) {
-		seat_keyboard_notify_enter(seat, surface);
-		seat_tablet_pads_notify_enter(seat, surface);
-		sway_input_method_relay_set_focus(&seat->im_relay, surface);
 	}
 }
 
@@ -821,8 +814,15 @@ static void seat_configure_keyboard(struct sway_seat *seat,
 		sway_keyboard_create(seat, seat_device);
 	}
 	sway_keyboard_configure(seat_device->keyboard);
-	wlr_seat_set_keyboard(seat->wlr_seat,
-		wlr_keyboard_from_input_device(seat_device->input_device->wlr_device));
+
+	// We only need to update the current keyboard, as the rest will be updated
+	// as they are activated.
+	struct wlr_keyboard *wlr_keyboard =
+		wlr_keyboard_from_input_device(seat_device->input_device->wlr_device);
+	struct wlr_keyboard *current_keyboard = seat->wlr_seat->keyboard_state.keyboard;
+	if (wlr_keyboard != current_keyboard) {
+		return;
+	}
 
 	// force notify reenter to pick up the new configuration.  This reuses
 	// the current focused surface to avoid breaking input grabs.
@@ -1141,15 +1141,7 @@ void seat_set_raw_focus(struct sway_seat *seat, struct sway_node *node) {
 	}
 }
 
-void seat_set_focus(struct sway_seat *seat, struct sway_node *node) {
-	if (seat->focused_layer) {
-		struct wlr_layer_surface_v1 *layer = seat->focused_layer;
-		seat_set_focus_layer(seat, NULL);
-		seat_set_focus(seat, node);
-		seat_set_focus_layer(seat, layer);
-		return;
-	}
-
+static void seat_set_workspace_focus(struct sway_seat *seat, struct sway_node *node) {
 	struct sway_node *last_focus = seat_get_focus(seat);
 	if (last_focus == node) {
 		return;
@@ -1180,11 +1172,6 @@ void seat_set_focus(struct sway_seat *seat, struct sway_node *node) {
 
 	// Deny setting focus to a workspace node when using fullscreen global
 	if (root->fullscreen_global && !container && new_workspace) {
-		return;
-	}
-
-	// Deny setting focus when an input grab or lockscreen is active
-	if (container && container->view && !seat_is_input_allowed(seat, container->view->surface)) {
 		return;
 	}
 
@@ -1284,6 +1271,20 @@ void seat_set_focus(struct sway_seat *seat, struct sway_node *node) {
 		// When smart gaps is on, gaps may change when the focus changes so
 		// the workspace needs to be arranged
 		arrange_workspace(new_workspace);
+	}
+}
+
+void seat_set_focus(struct sway_seat *seat, struct sway_node *node) {
+	if (seat->focused_layer) {
+		struct wlr_layer_surface_v1 *layer = seat->focused_layer;
+		seat_set_focus_layer(seat, NULL);
+		seat_set_workspace_focus(seat, node);
+		seat_set_focus_layer(seat, layer);
+	} else {
+		seat_set_workspace_focus(seat, node);
+	}
+	if (server.session_lock.locked) {
+		seat_set_focus_surface(seat, server.session_lock.focused, false);
 	}
 }
 

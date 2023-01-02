@@ -1,7 +1,7 @@
 project(
 	'sway',
 	'c',
-	version: '1.8-dev',
+	version: '1.8',
 	license: 'MIT',
 	meson_version: '>=0.60.0',
 	default_options: [
@@ -46,10 +46,9 @@ subproject(
 
 jsonc = dependency('json-c', version: '>=0.13')
 pcre2 = dependency('libpcre2-8')
-wayland_server = dependency('wayland-server', version: '>=1.20.0')
+wayland_server = dependency('wayland-server', version: '>=1.21.0')
 wayland_client = dependency('wayland-client')
 wayland_cursor = dependency('wayland-cursor')
-wayland_egl = dependency('wayland-egl')
 wayland_protos = dependency('wayland-protocols', version: '>=1.24')
 wlroots = dependency('wlroots', version: wlroots_version)
 xkbcommon = dependency('xkbcommon')
@@ -60,7 +59,7 @@ gdk_pixbuf = dependency('gdk-pixbuf-2.0', required: get_option('gdk-pixbuf'))
 pixman = dependency('pixman-1')
 glesv2 = dependency('glesv2')
 libevdev = dependency('libevdev')
-libinput = dependency('libinput', version: '>=1.6.0')
+libinput = dependency('libinput', version: '>=1.21.0')
 xcb = dependency('xcb', required: get_option('xwayland'))
 drm_full = dependency('libdrm') # only needed for drm_fourcc.h
 drm = drm_full.partial_dependency(compile_args: true, includes: true)
@@ -84,7 +83,7 @@ endforeach
 if get_option('xwayland').enabled() and not wlroots_features['xwayland']
 	error('Cannot enable Xwayland in sway: wlroots has been built without Xwayland support')
 endif
-have_xwayland = xcb.found() and wlroots_features['xwayland']
+have_xwayland = xcb.found() and xcb_icccm.found() and wlroots_features['xwayland']
 
 if get_option('sd-bus-provider') == 'auto'
 	if not get_option('tray').disabled()

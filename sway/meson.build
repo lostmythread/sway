@@ -21,6 +21,7 @@ sway_sources = files(
 	'desktop/surface.c',
 	'desktop/transaction.c',
 	'desktop/xdg_shell.c',
+	'desktop/launcher.c',
 
 	'input/input-manager.c',
 	'input/cursor.c',
@@ -157,6 +158,7 @@ sway_sources = files(
 	'commands/input/drag.c',
 	'commands/input/drag_lock.c',
 	'commands/input/dwt.c',
+	'commands/input/dwtp.c',
 	'commands/input/events.c',
 	'commands/input/left_handed.c',
 	'commands/input/map_from_region.c',
@@ -198,6 +200,7 @@ sway_sources = files(
 	'commands/output/subpixel.c',
 	'commands/output/toggle.c',
 	'commands/output/transform.c',
+	'commands/output/unplug.c',
 
 	'tree/arrange.c',
 	'tree/container.c',
@@ -220,7 +223,6 @@ sway_deps = [
 	pcre2,
 	glesv2,
 	pixman,
-	server_protos,
 	threads,
 	wayland_server,
 	wlroots,
@@ -235,7 +237,7 @@ endif
 
 executable(
 	'sway',
-	sway_sources,
+	sway_sources + wl_protos_src,
 	include_directories: [sway_inc],
 	dependencies: sway_deps,
 	link_with: [lib_sway_common],

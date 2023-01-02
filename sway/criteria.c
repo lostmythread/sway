@@ -96,7 +96,8 @@ void criteria_destroy(struct criteria *criteria) {
 	pattern_destroy(criteria->window_role);
 #endif
 	pattern_destroy(criteria->con_mark);
-	free(criteria->workspace);
+	pattern_destroy(criteria->workspace);
+	free(criteria->target);
 	free(criteria->cmdlist);
 	free(criteria->raw);
 	free(criteria);
@@ -189,7 +190,7 @@ static bool criteria_matches_view(struct criteria *criteria,
 	if (criteria->title) {
 		const char *title = view_get_title(view);
 		if (!title) {
-			return false;
+			title = "";
 		}
 
 		switch (criteria->title->match_type) {
@@ -209,7 +210,7 @@ static bool criteria_matches_view(struct criteria *criteria,
 	if (criteria->shell) {
 		const char *shell = view_get_shell(view);
 		if (!shell) {
-			return false;
+			shell = "";
 		}
 
 		switch (criteria->shell->match_type) {
@@ -229,7 +230,7 @@ static bool criteria_matches_view(struct criteria *criteria,
 	if (criteria->app_id) {
 		const char *app_id = view_get_app_id(view);
 		if (!app_id) {
-			return false;
+			app_id = "";
 		}
 
 		switch (criteria->app_id->match_type) {
@@ -261,7 +262,7 @@ static bool criteria_matches_view(struct criteria *criteria,
 	if (criteria->class) {
 		const char *class = view_get_class(view);
 		if (!class) {
-			return false;
+			class = "";
 		}
 
 		switch (criteria->class->match_type) {
@@ -281,12 +282,12 @@ static bool criteria_matches_view(struct criteria *criteria,
 	if (criteria->instance) {
 		const char *instance = view_get_instance(view);
 		if (!instance) {
-			return false;
+			instance = "";
 		}
 
 		switch (criteria->instance->match_type) {
 		case PATTERN_FOCUSED:
-			if (focused && strcmp(instance, view_get_instance(focused))) {
+			if (focused && lenient_strcmp(instance, view_get_instance(focused))) {
 				return false;
 			}
 			break;
@@ -301,12 +302,12 @@ static bool criteria_matches_view(struct criteria *criteria,
 	if (criteria->window_role) {
 		const char *window_role = view_get_window_role(view);
 		if (!window_role) {
-			return false;
+			window_role = "";
 		}
 
 		switch (criteria->window_role->match_type) {
 		case PATTERN_FOCUSED:
-			if (focused && strcmp(window_role, view_get_window_role(focused))) {
+			if (focused && lenient_strcmp(window_role, view_get_window_role(focused))) {
 				return false;
 			}
 			break;

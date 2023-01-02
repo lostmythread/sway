@@ -185,12 +185,13 @@ static void pretty_print_seat(json_object *i) {
 }
 
 static void pretty_print_output(json_object *o) {
-	json_object *name, *rect, *focused, *active, *ws, *current_mode;
+	json_object *name, *rect, *focused, *active, *ws, *current_mode, *non_desktop;
 	json_object_object_get_ex(o, "name", &name);
 	json_object_object_get_ex(o, "rect", &rect);
 	json_object_object_get_ex(o, "focused", &focused);
 	json_object_object_get_ex(o, "active", &active);
 	json_object_object_get_ex(o, "current_workspace", &ws);
+	json_object_object_get_ex(o, "non_desktop", &non_desktop);
 	json_object *make, *model, *serial, *scale, *scale_filter, *subpixel,
 		*transform, *max_render_time, *adaptive_sync_status;
 	json_object_object_get_ex(o, "make", &make);
@@ -213,7 +214,15 @@ static void pretty_print_output(json_object *o) {
 	json_object_object_get_ex(current_mode, "height", &height);
 	json_object_object_get_ex(current_mode, "refresh", &refresh);
 
-	if (json_object_get_boolean(active)) {
+	if (json_object_get_boolean(non_desktop)) {
+		printf(
+			"Output %s '%s %s %s' (non-desktop)\n",
+			json_object_get_string(name),
+			json_object_get_string(make),
+			json_object_get_string(model),
+			json_object_get_string(serial)
+		);
+	} else if (json_object_get_boolean(active)) {
 		printf(
 			"Output %s '%s %s %s'%s\n"
 			"  Current mode: %dx%d @ %.3f Hz\n"
@@ -262,14 +271,22 @@ static void pretty_print_output(json_object *o) {
 		for (size_t i = 0; i < modes_len; ++i) {
 			json_object *mode = json_object_array_get_idx(modes, i);
 
-			json_object *mode_width, *mode_height, *mode_refresh;
+			json_object *mode_width, *mode_height, *mode_refresh,
+				*mode_picture_aspect_ratio;
 			json_object_object_get_ex(mode, "width", &mode_width);
 			json_object_object_get_ex(mode, "height", &mode_height);
 			json_object_object_get_ex(mode, "refresh", &mode_refresh);
+			json_object_object_get_ex(mode, "picture_aspect_ratio",
+				&mode_picture_aspect_ratio);
 
-			printf("    %dx%d @ %.3f Hz\n", json_object_get_int(mode_width),
+			printf("    %dx%d @ %.3f Hz", json_object_get_int(mode_width),
 				json_object_get_int(mode_height),
 				(double)json_object_get_int(mode_refresh) / 1000);
+			if (mode_picture_aspect_ratio &&
+					strcmp("none", json_object_get_string(mode_picture_aspect_ratio)) != 0) {
+				printf(" (%s)", json_object_get_string(mode_picture_aspect_ratio));
+			}
+			printf("\n");
 		}
 	}
 

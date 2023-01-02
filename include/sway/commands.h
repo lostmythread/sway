@@ -252,6 +252,7 @@ sway_cmd input_cmd_click_method;
 sway_cmd input_cmd_drag;
 sway_cmd input_cmd_drag_lock;
 sway_cmd input_cmd_dwt;
+sway_cmd input_cmd_dwtp;
 sway_cmd input_cmd_events;
 sway_cmd input_cmd_left_handed;
 sway_cmd input_cmd_map_from_region;
@@ -294,6 +295,7 @@ sway_cmd output_cmd_scale_filter;
 sway_cmd output_cmd_subpixel;
 sway_cmd output_cmd_toggle;
 sway_cmd output_cmd_transform;
+sway_cmd output_cmd_unplug;
 
 sway_cmd seat_cmd_attach;
 sway_cmd seat_cmd_cursor;

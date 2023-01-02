@@ -74,6 +74,7 @@ struct sway_view {
 	struct sway_xdg_decoration *xdg_decoration;
 
 	pid_t pid;
+	struct launcher_ctx *ctx;
 
 	// The size the view would want to be if it weren't tiled.
 	// Used when changing a view from tiled to floating.
@@ -155,6 +156,7 @@ struct sway_xwayland_view {
 	struct wl_listener set_title;
 	struct wl_listener set_class;
 	struct wl_listener set_role;
+	struct wl_listener set_startup_id;
 	struct wl_listener set_window_type;
 	struct wl_listener set_hints;
 	struct wl_listener set_decorations;
@@ -371,5 +373,7 @@ void view_remove_saved_buffer(struct sway_view *view);
 void view_save_buffer(struct sway_view *view);
 
 bool view_is_transient_for(struct sway_view *child, struct sway_view *ancestor);
+
+void view_assign_ctx(struct sway_view *view, struct launcher_ctx *ctx);
 
 #endif
